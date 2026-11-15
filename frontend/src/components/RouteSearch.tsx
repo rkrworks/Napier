@@ -32,7 +32,7 @@ export default function RouteSearch({
   const [destination, setDestination] = useState(initialDestination.toUpperCase());
   const [date, setDate] = useState(initialDate || isoDate(1));
 
-  // Autocomplete query states
+  // Autocomplete states
   const [originQuery, setOriginQuery] = useState("");
   const [destQuery, setDestQuery] = useState("");
   const [originSuggestions, setOriginSuggestions] = useState<AirportItem[]>([]);
@@ -42,13 +42,11 @@ export default function RouteSearch({
 
   const originBlurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destBlurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isSwappingRef = useRef(false);
 
   const originInputId = useId();
   const destInputId = useId();
   const dateInputId = useId();
 
-  // Clear blur timeouts on unmount
   useEffect(() => {
     return () => {
       if (originBlurTimeoutRef.current) clearTimeout(originBlurTimeoutRef.current);
@@ -56,7 +54,6 @@ export default function RouteSearch({
     };
   }, []);
 
-  // Update suggestions when user types
   useEffect(() => {
     if (!showOriginMenu) return;
     let active = true;
@@ -80,13 +77,9 @@ export default function RouteSearch({
   }, [destQuery, destination, showDestMenu]);
 
   const handleSwap = () => {
-    isSwappingRef.current = true;
     const tempOrigin = origin;
     setOrigin(destination);
     setDestination(tempOrigin);
-    setTimeout(() => {
-      isSwappingRef.current = false;
-    }, 200);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -102,20 +95,20 @@ export default function RouteSearch({
   };
 
   return (
-    <section className="glass relative z-30 p-4 sm:p-6 shadow-xl">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <section className="glass relative z-30 p-5 sm:p-7 shadow-xl">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* Main Search Controls Grid */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_auto] gap-3 items-center">
           {/* Origin Airport Combobox */}
           <div className="relative">
             <label
               htmlFor={originInputId}
-              className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
             >
               Origin Airport
             </label>
-            <div className="relative flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 px-3 py-2 transition focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20">
-              <MapPin className="h-4 w-4 text-cyan-500 shrink-0 mr-2" />
+            <div className="relative flex items-center h-[52px] rounded-xl border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-3.5 transition focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20">
+              <MapPin className="h-4 w-4 text-cyan-500 shrink-0 mr-2.5" />
               <div className="flex flex-col min-w-0 flex-1">
                 <input
                   id={originInputId}
@@ -139,14 +132,14 @@ export default function RouteSearch({
                   className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none"
                 />
               </div>
-              <span className="font-mono text-sm font-bold text-cyan-600 dark:text-cyan-400 shrink-0 ml-1">
+              <span className="font-mono text-sm font-bold text-cyan-600 dark:text-cyan-400 shrink-0 ml-1.5">
                 {origin}
               </span>
             </div>
 
             {/* Suggestions Dropdown */}
             {showOriginMenu && originSuggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 max-h-60 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1">
+              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-64 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5">
                 {originSuggestions.map((a) => (
                   <button
                     key={`origin-${a.iata}`}
@@ -176,7 +169,7 @@ export default function RouteSearch({
           </div>
 
           {/* Swap Button (44px min tap target) */}
-          <div className="flex justify-center -my-1 md:my-0">
+          <div className="flex justify-center -my-1 md:my-0 pt-5 md:pt-0">
             <button
               type="button"
               onClick={handleSwap}
@@ -192,12 +185,12 @@ export default function RouteSearch({
           <div className="relative">
             <label
               htmlFor={destInputId}
-              className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
             >
               Destination Airport
             </label>
-            <div className="relative flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 px-3 py-2 transition focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">
-              <MapPin className="h-4 w-4 text-purple-500 shrink-0 mr-2" />
+            <div className="relative flex items-center h-[52px] rounded-xl border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-3.5 transition focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">
+              <MapPin className="h-4 w-4 text-purple-500 shrink-0 mr-2.5" />
               <div className="flex flex-col min-w-0 flex-1">
                 <input
                   id={destInputId}
@@ -221,14 +214,14 @@ export default function RouteSearch({
                   className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none"
                 />
               </div>
-              <span className="font-mono text-sm font-bold text-purple-600 dark:text-purple-400 shrink-0 ml-1">
+              <span className="font-mono text-sm font-bold text-purple-600 dark:text-purple-400 shrink-0 ml-1.5">
                 {destination}
               </span>
             </div>
 
             {/* Suggestions Dropdown */}
             {showDestMenu && destSuggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 max-h-60 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1">
+              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-64 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5">
                 {destSuggestions.map((a) => (
                   <button
                     key={`dest-${a.iata}`}
@@ -261,12 +254,12 @@ export default function RouteSearch({
           <div>
             <label
               htmlFor={dateInputId}
-              className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
             >
               Departure Date
             </label>
-            <div className="relative flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 px-3 py-2 transition focus-within:border-cyan-500">
-              <Calendar className="h-4 w-4 text-slate-400 shrink-0 mr-2" />
+            <div className="relative flex items-center h-[52px] rounded-xl border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-3.5 transition focus-within:border-cyan-500">
+              <Calendar className="h-4 w-4 text-slate-400 shrink-0 mr-2.5" />
               <input
                 id={dateInputId}
                 type="date"
@@ -278,12 +271,12 @@ export default function RouteSearch({
             </div>
           </div>
 
-          {/* Analyze Route Submit CTA */}
+          {/* Analyze Route CTA */}
           <div className="pt-5 md:pt-0">
             <button
               type="submit"
               disabled={loading || origin === destination}
-              className="flex min-h-[44px] h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 px-6 font-bold text-white shadow-lg shadow-purple-500/25 transition hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex h-[52px] min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 px-6 font-bold text-white shadow-lg shadow-purple-500/25 transition hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <>
@@ -301,7 +294,7 @@ export default function RouteSearch({
         </div>
 
         {/* Popular Route Quick Selection Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Popular Indian Hubs:
           </span>
@@ -316,7 +309,7 @@ export default function RouteSearch({
                   setDestination(r.dest);
                   onSearch(r.origin, r.dest, date);
                 }}
-                className={`min-h-[32px] rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                className={`min-h-[36px] rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                   isSelected
                     ? "bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border border-cyan-500/40"
                     : "glass-inner text-slate-600 dark:text-slate-300 hover:text-cyan-500 dark:hover:text-cyan-400"

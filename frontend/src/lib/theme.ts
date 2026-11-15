@@ -7,7 +7,7 @@ function subscribe(callback: () => void) {
   const observer = new MutationObserver(callback);
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["class"],
+    attributeFilter: ["class", "data-theme"],
   });
   return () => observer.disconnect();
 }
@@ -30,6 +30,8 @@ export function useIsDark(): boolean {
 export function setTheme(dark: boolean) {
   if (typeof document === "undefined") return;
   document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  document.documentElement.setAttribute("data-tone", dark ? "dark" : "light");
   try {
     localStorage.setItem("napier-theme", dark ? "dark" : "light");
   } catch {
