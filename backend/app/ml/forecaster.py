@@ -10,26 +10,28 @@ import holidays
 
 
 class HolidayFeatureTransformer:
-    MAJOR_FESTIVALS = {
-        datetime.date(2026, 1, 1): "New Year's Day",
-        datetime.date(2026, 1, 14): "Makar Sankranti / Pongal",
-        datetime.date(2026, 1, 26): "Republic Day",
-        datetime.date(2026, 3, 4): "Holi",
-        datetime.date(2026, 10, 20): "Dussehra",
-        datetime.date(2026, 11, 8): "Diwali",
-        datetime.date(2026, 12, 25): "Christmas",
-        datetime.date(2026, 12, 31): "New Year's Eve",
-    }
-
     def __init__(self):
-        year = datetime.date.today().year
-        self.in_holidays = holidays.India(years=[year, year + 1])
+        self._holiday_cache: dict[int, dict[datetime.date, str]] = {}
+
+    def get_festivals(self, target_year: int) -> dict[datetime.date, str]:
+        all_festivals: dict[datetime.date, str] = {}
+        for y in (target_year - 1, target_year, target_year + 1):
+            if y not in self._holiday_cache:
+                in_h = holidays.India(years=[y])
+                y_fests = dict(in_h.items())
+                y_fests.setdefault(datetime.date(y, 1, 1), "New Year's Day")
+                y_fests.setdefault(datetime.date(y, 1, 14), "Makar Sankranti / Pongal")
+                y_fests.setdefault(datetime.date(y, 12, 31), "New Year's Eve")
+                self._holiday_cache[y] = y_fests
+            all_festivals.update(self._holiday_cache[y])
+        return all_festivals
 
     def get_holiday_features(self, target_date: datetime.date) -> dict[str, Any]:
-        festival_name = self.MAJOR_FESTIVALS.get(target_date) or self.in_holidays.get(target_date)
+        festivals = self.get_festivals(target_date.year)
+        festival_name = festivals.get(target_date)
 
-        min_days, closest = 99, None
-        for fest_date, name in self.MAJOR_FESTIVALS.items():
+        min_days, closest = 999, None
+        for fest_date, name in festivals.items():
             diff = abs((fest_date - target_date).days)
             if diff < min_days:
                 min_days, closest = diff, name

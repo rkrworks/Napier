@@ -46,14 +46,19 @@ export default function AssistantDrawer({ open, onClose, origin, destination, da
     <>
       {open && <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm" onClick={onClose} aria-hidden />}
       <aside
-        aria-hidden={!open}
+        inert={!open ? true : undefined}
+        aria-hidden={!open ? true : undefined}
         className={`glass fixed bottom-4 right-4 top-4 z-50 flex w-[calc(100%-2rem)] flex-col overflow-hidden transition-transform duration-300 sm:w-96 ${
           open ? "translate-x-0" : "translate-x-[120%]"
         }`}
       >
         <div className="flex items-center justify-between border-b border-slate-200/70 p-4 dark:border-slate-800/70">
           <h3 className="text-sm font-bold">NAPIER AI Assistant{ready ? ` · ${origin} → ${destination}` : ""}</h3>
-          <button onClick={onClose} aria-label="Close assistant" className="muted hover:text-cyan-500">
+          <button
+            onClick={onClose}
+            aria-label="Close assistant"
+            className="muted flex h-11 w-11 items-center justify-center rounded-xl transition hover:text-cyan-500"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -105,13 +110,13 @@ export default function AssistantDrawer({ open, onClose, origin, destination, da
             disabled={!ready}
             placeholder={ready ? "Ask about fares, festivals, carriers…" : "Search a route first"}
             aria-label="Message"
-            className="glass-inner flex-1 px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-cyan-400/70 disabled:opacity-50"
+            className="glass-inner min-h-[44px] flex-1 px-3 py-2.5 text-xs outline-none focus:ring-2 focus:ring-cyan-400/70 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!ready || busy}
             aria-label="Send"
-            className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 px-3 text-white disabled:opacity-50"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 px-3 text-white transition hover:opacity-90 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
           </button>
