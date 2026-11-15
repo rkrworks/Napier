@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:gh-pages": "GITHUB_PAGES=true NEXT_PUBLIC_API_URL=https://napier-backend.onrender.com next build",
     "start": "next start",
     "lint": "eslint"
   },

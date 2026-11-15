@@ -20,6 +20,8 @@ frontend/node_modules/
 /.next/
 frontend/.next/
 /out/
+out/
+frontend/out/
 
 # Python
 __pycache__/
