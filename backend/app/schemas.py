@@ -12,6 +12,8 @@ class CarrierQuote(BaseModel):
     departure_time: Optional[str] = None
     arrival_time: Optional[str] = None
     booking_url: str
+    is_connecting: Optional[bool] = False
+    operating_carriers: Optional[List[str]] = None
 
 
 class ChatRequest(BaseModel):
