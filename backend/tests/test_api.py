@@ -30,6 +30,8 @@ def test_predict_uses_cheapest_live_fare(monkeypatch):
     assert body["base_fare"] == 5100
     assert [q["name"] for q in body["live_carrier_quotes"]] == ["IndiGo", "Air India"]
     assert "tt=o" in body["google_flights_url"]
+    assert "fetched_at" in body
+    assert body["fetched_at"] is not None
 
 
 def test_predict_503_without_live_data_never_synthesises(monkeypatch):
