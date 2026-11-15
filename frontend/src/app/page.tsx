@@ -1,175 +1,385 @@
 "use client";
 
-import { useRef, useState } from "react";
-import AssistantDrawer from "@/components/AssistantDrawer";
+import { useEffect, useState } from "react";
+import Header from "@/components/Header";
+import RouteSearch from "@/components/RouteSearch";
 import CarrierCards from "@/components/CarrierCards";
 import FareChart from "@/components/FareChart";
 import ForecastPanel from "@/components/ForecastPanel";
-import GlassCard from "@/components/GlassCard";
-import Header, { type MainTab } from "@/components/Header";
 import HistoricTrends from "@/components/HistoricTrends";
-import RouteSearch, { QUICK_ROUTES } from "@/components/RouteSearch";
-import { ApiError, fetchRoutePrediction, resolveRoute, type MLPrediction, type ResolvedRoute } from "@/lib/api";
-import { isoDate } from "@/lib/format";
-
-type Status = "idle" | "loading" | "ready" | "error";
+import AssistantDrawer from "@/components/AssistantDrawer";
+import {
+  fetchRoutePrediction,
+  type MLPrediction,
+  ApiError,
+} from "@/lib/api";
+import { inr, isoDate } from "@/lib/format";
+import {
+  TrendingDown,
+  Layers,
+  Gauge,
+  CalendarCheck,
+  AlertTriangle,
+  RotateCw,
+  ExternalLink,
+  ShieldCheck,
+  Activity,
+  Plane,
+} from "lucide-react";
 
 export default function Home() {
-  const [tab, setTab] = useState<MainTab>("live");
-  const [assistantOpen, setAssistantOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [date, setDate] = useState(() => isoDate(14));
-
-  const [status, setStatus] = useState<Status>("idle");
-  const [route, setRoute] = useState<ResolvedRoute | null>(null);
+  const [origin, setOrigin] = useState("DEL");
+  const [destination, setDestination] = useState("BOM");
+  const [departureDate, setDepartureDate] = useState(() => isoDate(1));
   const [prediction, setPrediction] = useState<MLPrediction | null>(null);
-  const [error, setError] = useState<ApiError | Error | null>(null);
-  const requestId = useRef(0);
+  const [loading, setLoading] = useState(true);
+  const [liveDataUnavailable, setLiveDataUnavailable] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"live" | "history">("live");
 
-  async function runSearch(q: string, d: string) {
-    const id = ++requestId.current;
-    setStatus("loading");
-    setError(null);
-    setPrediction(null);
-    setRoute(null);
-    try {
-      const resolved = await resolveRoute(q);
-      if (id !== requestId.current) return;
-      setRoute(resolved); // lets the skeleton name the exact route being fetched
-      const result = await fetchRoutePrediction(resolved.origin, resolved.destination, d);
-      if (id !== requestId.current) return;
-      setPrediction(result);
-      setStatus("ready");
-    } catch (e) {
-      if (id !== requestId.current) return;
-      setError(e instanceof Error ? e : new Error("Request failed."));
-      setStatus("error");
-    }
-  }
+  const routeCode = `${origin}-${destination}`;
+  const googleFlightsUrl =
+    prediction?.google_flights_url ||
+    `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}&curr=INR&gl=in`;
 
-  const search = (q = query) => {
-    if (q.trim()) runSearch(q.trim(), date);
+  useEffect(() => {
+    let active = true;
+
+    fetchRoutePrediction(origin, destination, departureDate)
+      .then((res) => {
+        if (!active) return;
+        setPrediction(res);
+        setLiveDataUnavailable(false);
+        setErrorMessage(null);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setLoading(false);
+        if (err instanceof ApiError && err.code === "LIVE_DATA_UNAVAILABLE") {
+          setLiveDataUnavailable(true);
+          setErrorMessage(err.message || "Live fares are currently unavailable from SerpApi.");
+        } else if (err instanceof ApiError && err.status === 503) {
+          setLiveDataUnavailable(true);
+          setErrorMessage(err.message || "Live airfare provider is temporarily unavailable.");
+        } else {
+          setErrorMessage(
+            err instanceof Error ? err.message : "Failed to load telemetry for this route."
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [origin, destination, departureDate]);
+
+  const handleSearch = (newOrigin: string, newDest: string, newDate: string) => {
+    setLoading(true);
+    setErrorMessage(null);
+    setOrigin(newOrigin);
+    setDestination(newDest);
+    setDepartureDate(newDate);
   };
 
-  const code = route ? `${route.origin} → ${route.destination}` : null;
-  const googleUrl = prediction?.google_flights_url ?? null;
-  const liveRouteCode = route ? `${route.origin}-${route.destination}` : null;
+  const handleRetry = () => {
+    setLoading(true);
+    setErrorMessage(null);
+    setLiveDataUnavailable(false);
+    fetchRoutePrediction(origin, destination, departureDate)
+      .then((res) => {
+        setPrediction(res);
+        setLiveDataUnavailable(false);
+        setErrorMessage(null);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        setLoading(false);
+        if (err instanceof ApiError && err.code === "LIVE_DATA_UNAVAILABLE") {
+          setLiveDataUnavailable(true);
+          setErrorMessage(err.message || "Live fares are currently unavailable from SerpApi.");
+        } else if (err instanceof ApiError && err.status === 503) {
+          setLiveDataUnavailable(true);
+          setErrorMessage(err.message || "Live airfare provider is temporarily unavailable.");
+        } else {
+          setErrorMessage(
+            err instanceof Error ? err.message : "Failed to load telemetry for this route."
+          );
+        }
+      });
+  };
+
+  // KPI Calculations
+  const quotes = prediction?.live_carrier_quotes || [];
+  const lowestFare = quotes.length > 0 ? Math.min(...quotes.map((q) => q.price)) : null;
+  const highestFare = quotes.length > 0 ? Math.max(...quotes.map((q) => q.price)) : null;
+  const fareSpread =
+    lowestFare !== null && highestFare !== null ? highestFare - lowestFare : null;
+
+  // Jevons index relative to 4000 INR baseline
+  const jevonsRelativeIndex = lowestFare ? (lowestFare / 4000) * 100 : null;
+  const jevonsDelta = jevonsRelativeIndex ? jevonsRelativeIndex - 100 : null;
 
   return (
-    <div className="flex min-h-screen flex-col gap-6 px-4 pb-10 pt-4 md:px-6">
-      <Header tab={tab} onTab={setTab} onOpenAssistant={() => setAssistantOpen(true)} />
+    <div className="flex min-h-screen flex-col selection:bg-cyan-500/20 selection:text-cyan-400">
+      {/* Top Floating Glass Navigation Header */}
+      <div className="px-4 pt-3 sm:px-6">
+        <Header
+          googleFlightsUrl={googleFlightsUrl}
+          onOpenAssistant={() => setAssistantOpen(true)}
+          isBackendHealthy={!errorMessage || liveDataUnavailable}
+        />
+      </div>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 space-y-6">
-        {tab === "live" && (
-          <>
-            <RouteSearch
-              query={query}
-              date={date}
-              loading={status === "loading"}
-              statusLabel={code}
-              googleUrl={googleUrl}
-              onQuery={setQuery}
-              onDate={setDate}
-              onSubmit={() => search()}
-            />
+      {/* Main Body */}
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 space-y-6">
+        {/* Command Center Flight Search */}
+        <RouteSearch
+          initialOrigin={origin}
+          initialDestination={destination}
+          initialDate={departureDate}
+          loading={loading}
+          onSearch={handleSearch}
+        />
 
-            {status === "idle" && (
-              <GlassCard className="p-8 text-center">
-                <p className="text-lg font-semibold">Search any route to pull live one-way fares</p>
-                <p className="muted mx-auto mt-1 max-w-xl text-sm">
-                  Use city names or IATA codes. Prices come straight from Google Flights; nothing is estimated or pre-filled.
-                </p>
-                <div className="mt-5 flex flex-wrap justify-center gap-2">
-                  {QUICK_ROUTES.map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => {
-                        setQuery(r);
-                        search(r);
-                      }}
-                      className="glass-inner px-3 py-1.5 text-xs font-medium transition hover:border-cyan-400/70 hover:text-cyan-500"
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </GlassCard>
-            )}
+        {/* Tab Switcher: Live Telemetry vs Archived Index */}
+        <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800/70 pb-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("live")}
+              className={`min-h-[40px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition ${
+                activeTab === "live"
+                  ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-md shadow-cyan-500/20"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Live Telemetry &amp; Analytics
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("history")}
+              className={`min-h-[40px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition ${
+                activeTab === "history"
+                  ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/20"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Archived Jevons Index Trends
+            </button>
+          </div>
 
-            {status === "loading" && (
-              <GlassCard glow className="space-y-4 p-6">
-                <p className="animate-pulse text-sm font-semibold">
-                  {code ? `Fetching live telemetry for ${route!.origin} → ${route!.destination}...` : "Resolving route..."}
-                </p>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="glass-inner h-24 animate-pulse" />
-                  ))}
-                </div>
-                <div className="glass-inner h-48 animate-pulse" />
-              </GlassCard>
-            )}
+          <div className="hidden md:flex items-center gap-1.5 text-xs font-mono font-medium text-slate-400">
+            <Activity className="h-3.5 w-3.5 text-cyan-500" />
+            <span>ROUTE: {routeCode}</span>
+          </div>
+        </div>
 
-            {status === "error" && error && (
-              <GlassCard className="space-y-3 p-6">
-                <p className="font-semibold text-rose-500">
-                  {error instanceof ApiError && error.code === "LIVE_DATA_UNAVAILABLE" ? "Live fares unavailable" : "Search failed"}
-                </p>
-                <p className="muted text-sm">{error.message}</p>
-                <button
-                  onClick={() => search()}
-                  className="min-h-[44px] rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:opacity-90 active:scale-95"
-                >
-                  Retry
-                </button>
-              </GlassCard>
-            )}
-
-            {status === "ready" && prediction && liveRouteCode && (
-              <div className="space-y-6">
-                <ForecastPanel p={prediction} />
-                <FareChart quotes={prediction.live_carrier_quotes} p={prediction} />
-                <CarrierCards
-                  quotes={prediction.live_carrier_quotes}
-                  route={code!}
-                  fetchedAt={prediction.fetched_at}
-                />
+        {/* 4-Card KPI Telemetry Summary Strip */}
+        <section aria-label="Key Flight Telemetry Metrics">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Lowest Live Fare */}
+            <div className="glass p-4 sm:p-5 flex flex-col justify-between transition hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Lowest Live Fare
+                </span>
+                <TrendingDown className="h-4 w-4 text-cyan-500" />
               </div>
-            )}
-          </>
+              <div className="mt-2">
+                <p className="font-mono text-3xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                  {lowestFare ? inr(lowestFare) : liveDataUnavailable ? "Indicative only" : "—"}
+                </p>
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                  {lowestFare
+                    ? `${quotes[0]?.name || "Carrier"} one-way`
+                    : liveDataUnavailable
+                    ? "Live SerpApi key required"
+                    : "Fetching live fares..."}
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2: Route Spread & Carrier Count */}
+            <div className="glass p-4 sm:p-5 flex flex-col justify-between transition hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Carrier Count &amp; Spread
+                </span>
+                <Layers className="h-4 w-4 text-indigo-500" />
+              </div>
+              <div className="mt-2">
+                <p className="font-mono text-3xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                  {quotes.length > 0 ? `${quotes.length} Airlines` : "0 Airlines"}
+                </p>
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                  {fareSpread !== null ? `Spread: ${inr(fareSpread)} variance` : "No quote dispersion"}
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3: Jevons Price Index */}
+            <div className="glass p-4 sm:p-5 flex flex-col justify-between transition hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Jevons Price Index
+                </span>
+                <Gauge className="h-4 w-4 text-purple-500" />
+              </div>
+              <div className="mt-2">
+                <p className="font-mono text-3xl font-black text-purple-500 tabular-nums tracking-tight">
+                  {jevonsRelativeIndex ? jevonsRelativeIndex.toFixed(1) : "100.0"}
+                </p>
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                  {jevonsDelta !== null
+                    ? `${jevonsDelta >= 0 ? "+" : ""}${jevonsDelta.toFixed(1)}% vs ₹4,000 baseline`
+                    : "Relative to base 100.0"}
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4: 30-Day Booking Verdict */}
+            <div className="glass p-4 sm:p-5 flex flex-col justify-between transition hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Booking Verdict
+                </span>
+                <CalendarCheck className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="mt-2">
+                <p className="font-mono text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                  {prediction?.recommendation || "ANALYZE NOW"}
+                </p>
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                  {prediction?.festival_name
+                    ? `${prediction.festival_name} (${prediction.holiday_impact_factor})`
+                    : "Standard lead-time schedule"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Resilient Alert for 503 LIVE_DATA_UNAVAILABLE or Backend Cold Start */}
+        {liveDataUnavailable && (
+          <div className="glass border-amber-500/40 bg-amber-500/10 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-500">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Live Fares Unavailable from SerpApi (HTTP 503)
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 max-w-2xl">
+                  {errorMessage ||
+                    "Live Google Flights pricing requires a configured SERPAPI_KEY on the backend server. Per NAPIER integrity rules, prices are never synthesized or estimated."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleRetry}
+                className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/70 dark:bg-slate-900/70 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 shadow-sm transition hover:bg-amber-500/20 active:scale-95"
+              >
+                <RotateCw className="h-3.5 w-3.5" />
+                <span>Retry Live Fetch</span>
+              </button>
+
+              <a
+                href={googleFlightsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 active:scale-95"
+              >
+                <span>View Google Flights</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
         )}
 
-        {tab === "historic" && <HistoricTrends route={liveRouteCode} />}
+        {/* Tab 1: Live Analytics & Predictive Forecaster */}
+        {activeTab === "live" && (
+          <div className="space-y-6">
+            {/* Live Carrier Cards */}
+            <CarrierCards
+              quotes={quotes}
+              fetchedAt={prediction?.fetched_at}
+              routeCode={routeCode}
+            />
+
+            {/* Fare Spread Bar Chart & AI Forecaster Bento Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <FareChart quotes={quotes} routeCode={routeCode} />
+
+              {prediction ? (
+                <ForecastPanel prediction={prediction} />
+              ) : (
+                <div className="glass p-6 flex flex-col items-center justify-center text-center h-full min-h-[320px]">
+                  <Plane className="h-10 w-10 text-slate-400 mb-2 opacity-50" />
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                    Predictive Demand Engine Standby
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1">
+                    Route demand projections and festival multipliers will render once a route
+                    prediction response is received.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Historic Trends & Archive */}
+        {activeTab === "history" && <HistoricTrends route={routeCode} />}
       </main>
 
-      <footer className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 md:grid-cols-2">
-        <GlassCard glow className="space-y-2 p-6">
-          <h3 className="text-lg font-bold">Purpose of NAPIER</h3>
-          <p className="muted text-xs leading-relaxed">
-            The <strong>National Airfare Price Index Engine · Real-time</strong> maps live one-way fares for any airport pair and tracks an
-            archived Jevons price index over time.
-          </p>
-        </GlassCard>
-        <GlassCard className="space-y-2 p-6">
-          <h3 className="text-lg font-bold">About &amp; system status</h3>
-          <p className="muted text-xs leading-relaxed">
-            Fares are fetched live via SerpApi’s Google Flights engine and cached for 30–60 minutes. Projections are heuristic, anchored on
-            the live fare.
-          </p>
-          <div className="muted flex justify-between border-t border-slate-200/70 pt-2 text-[11px] dark:border-slate-800/70">
-            <span>© {new Date().getFullYear()} NAPIER Engine</span>
-            <span className="font-mono text-cyan-500">v2.0</span>
-          </div>
-        </GlassCard>
-      </footer>
-
+      {/* AI Assistant Drawer */}
       <AssistantDrawer
         open={assistantOpen}
         onClose={() => setAssistantOpen(false)}
-        origin={route?.origin ?? null}
-        destination={route?.destination ?? null}
-        date={date}
+        origin={origin}
+        destination={destination}
+        departureDate={departureDate}
       />
+
+      {/* Footer */}
+      <footer className="mt-12 border-t border-slate-200/60 dark:border-slate-800/60 py-6 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-cyan-500" />
+            <span>
+              NAPIER v2.0 · Strict Data Integrity · Never Synthesises Fares
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/rkrworks/Napier"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-cyan-500 transition"
+            >
+              GitHub (rkrworks/Napier)
+            </a>
+            <span>•</span>
+            <a
+              href="https://napier-backend.onrender.com/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-cyan-500 transition"
+            >
+              API Swagger Docs
+            </a>
+            <span>•</span>
+            <span>© {new Date().getFullYear()} NAPIER</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

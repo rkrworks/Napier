@@ -2,26 +2,43 @@
 
 import { useSyncExternalStore } from "react";
 
-function subscribe(cb: () => void) {
-  const obs = new MutationObserver(cb);
-  obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-  return () => obs.disconnect();
+function subscribe(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
 }
 
-/** True when <html> has the `dark` class (set by the theme toggle / pre-paint script). */
+/**
+ * Returns true when <html> carries the .dark class.
+ * Defaults to true for dark mode first-load.
+ */
 export function useIsDark(): boolean {
   return useSyncExternalStore(
     subscribe,
-    () => document.documentElement.classList.contains("dark"),
+    () => {
+      if (typeof document === "undefined") return true;
+      return document.documentElement.classList.contains("dark");
+    },
     () => true
   );
 }
 
 export function setTheme(dark: boolean) {
+  if (typeof document === "undefined") return;
   document.documentElement.classList.toggle("dark", dark);
   try {
     localStorage.setItem("napier-theme", dark ? "dark" : "light");
   } catch {
-    /* storage unavailable: theme still applies for this session */
+    /* ignore storage access restrictions */
   }
+}
+
+export function toggleTheme() {
+  if (typeof document === "undefined") return;
+  const isDark = document.documentElement.classList.contains("dark");
+  setTheme(!isDark);
 }

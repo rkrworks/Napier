@@ -1,80 +1,143 @@
 @import "tailwindcss";
 
-/* class-based dark mode: <html class="dark"> */
-@custom-variant dark (&:where(.dark, .dark *));
-
-:root {
-  --bg: #f8fafc;
-  --fg: #0f172a;
-  --muted: #475569;
-  --blob-a: rgba(6, 182, 212, 0.18);
-  --blob-b: rgba(168, 85, 247, 0.16);
-}
-.dark {
-  --bg: #030712;
-  --fg: #f1f5f9;
-  --muted: #94a3b8;
-  --blob-a: rgba(6, 182, 212, 0.16);
-  --blob-b: rgba(168, 85, 247, 0.18);
-}
-
-@property --angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-@keyframes napier-spin { to { --angle: 360deg; } }
-
 @layer base {
-  html { color-scheme: light; }
-  html.dark { color-scheme: dark; }
+  :root {
+    --bg-canvas: #f8fafc;
+    --bg-mesh: radial-gradient(at 10% 10%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+               radial-gradient(at 90% 10%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+               radial-gradient(at 50% 90%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);
+    --card-surface: rgba(255, 255, 255, 0.85);
+    --card-inner: rgba(241, 245, 249, 0.7);
+    --border-subtle: rgba(15, 23, 42, 0.09);
+    --border-specular: rgba(255, 255, 255, 0.9);
+    --text-primary: #0f172a;
+    --text-muted: #475569;
+    --text-subtle: #64748b;
+    --accent-cyan: #0891b2;
+    --accent-purple: #7c3aed;
+    color-scheme: light;
+  }
+
+  html.dark {
+    --bg-canvas: #060913;
+    --bg-mesh: radial-gradient(at 15% 15%, rgba(6, 182, 212, 0.14) 0px, transparent 45%),
+               radial-gradient(at 85% 15%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+               radial-gradient(at 50% 85%, rgba(14, 165, 233, 0.10) 0px, transparent 55%);
+    --card-surface: rgba(15, 23, 42, 0.65);
+    --card-inner: rgba(15, 23, 42, 0.45);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-specular: rgba(255, 255, 255, 0.14);
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-subtle: #64748b;
+    --accent-cyan: #06b6d4;
+    --accent-purple: #8b5cf6;
+    color-scheme: dark;
+  }
+
   body {
-    background-color: var(--bg);
-    color: var(--fg);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    background-color: var(--bg-canvas);
+    background-image: var(--bg-mesh);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     min-height: 100vh;
+    overflow-x: hidden;
   }
-  /* spatial canvas: soft depth blobs behind the glass */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(60rem 40rem at 15% -10%, var(--blob-a), transparent 60%),
-      radial-gradient(50rem 36rem at 90% 10%, var(--blob-b), transparent 60%),
-      radial-gradient(40rem 30rem at 50% 110%, var(--blob-a), transparent 60%);
+
+  * {
+    box-sizing: border-box;
   }
 }
 
-@layer components {
-  .glass {
-    @apply backdrop-blur-xl bg-white/70 border border-slate-200/80 rounded-3xl
-      shadow-[0_10px_40px_-12px_rgba(15,23,42,0.18)]
-      dark:bg-slate-950/60 dark:border-slate-800/80 dark:shadow-[0_10px_50px_-12px_rgba(0,0,0,0.8)];
-  }
-  .glass-inner {
-    @apply rounded-2xl border border-slate-200/70 bg-white/60
-      dark:border-slate-800/70 dark:bg-slate-900/50;
-  }
-  /* running cyan/purple gradient border for active panels */
-  .glow { position: relative; }
-  .glow::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: conic-gradient(from var(--angle), #22d3ee, #a855f7, #22d3ee);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: napier-spin 6s linear infinite;
-    pointer-events: none;
-  }
-  .muted { color: var(--muted); }
+/* Tabular Numerals for Telemetry Precision */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .glow::before { animation: none; }
+/* Spatial Glass Surface Classes */
+.glass {
+  background: var(--card-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-subtle);
+  border-top-color: var(--border-specular);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.06),
+              0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-panel {
+  background: var(--card-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-top-color: var(--border-specular);
+  border-radius: 1rem;
+}
+
+.glass-inner {
+  background: var(--card-inner);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+}
+
+.glass-specular {
+  position: relative;
+}
+
+.glass-specular::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--border-specular) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.glow-border {
+  position: relative;
+}
+
+.glow-border::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.5), rgba(139, 92, 246, 0.5));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Subtle Shimmer Animation */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite;
+}
+
+/* Custom Telemetry Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
 }
