@@ -25,7 +25,25 @@ def calculate_jevons_index(current_prices: np.ndarray, base_prices: np.ndarray) 
 def run_napier_engine() -> None:
     if supabase_client is None:
         raise RuntimeError("SUPABASE_URL / SUPABASE_KEY must be set.")
-    data = supabase_client.table("raw_flight_prices").select("*").execute().data
+
+    # Page through raw_flight_prices with .range() until no more rows return
+    page_size = 1000
+    all_rows = []
+    start = 0
+    while True:
+        res = (
+            supabase_client.table("raw_flight_prices")
+            .select("*")
+            .range(start, start + page_size - 1)
+            .execute()
+        )
+        rows = res.data or []
+        all_rows.extend(rows)
+        if len(rows) < page_size:
+            break
+        start += page_size
+
+    data = all_rows
     if not data:
         print("No raw records found.")
         return
@@ -39,6 +57,9 @@ def run_napier_engine() -> None:
         prices = clean["price"].to_numpy(dtype=float)
         jevons = calculate_jevons_index(prices, np.full_like(prices, BENCHMARK_BASE_FARE))
         avg = round(float(np.mean(prices)), 2)
+        # Note: 'mom_change_pct' records (jevons - 100.0), measuring the percentage change
+        # relative to the benchmark base fare (4000 INR), rather than a calendar month-over-month delta.
+        # 'avg_total_fare' is preserved in the schema for parity with raw price aggregation.
         records.append({
             "calculation_date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             "route_code": route_code,
