@@ -21,7 +21,8 @@ async def run_full_scraping_cycle() -> None:
         for lead in LEAD_TIMES:
             dep = (datetime.now(timezone.utc) + timedelta(days=lead)).strftime("%Y-%m-%d")
             try:
-                quotes, _ = await fetch_live_quotes(origin, dest, dep)
+                live_res = await fetch_live_quotes(origin, dest, dep)
+                quotes = live_res[0]
             except LiveDataUnavailable as exc:
                 print(f"skip {origin}-{dest} T+{lead}: {exc.reason}")
                 continue

@@ -18,7 +18,8 @@ async def assistant_chat(req: ChatRequest):
     route_code = f"{origin}-{destination}"
 
     try:
-        quotes, _ = await fetch_live_quotes(origin, destination, req.date)
+        live_res = await fetch_live_quotes(origin, destination, req.date)
+        quotes = live_res[0]
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str | None = None
     SUPABASE_KEY: str | None = None
     SERPAPI_KEY: str | None = None
+    SERPAPI_GL: str = "in"
     REDIS_URL: str | None = None
     CACHE_TTL_SECONDS: int = 2700  # 45 min; clamped to 30-60 min
     ALLOWED_ORIGINS: str = "*"  # comma-separated list

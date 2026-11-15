@@ -26,7 +26,10 @@ async def get_price_prediction(
     if origin.upper() == destination.upper():
         raise HTTPException(status_code=422, detail="origin and destination must differ")
     try:
-        quotes, dep_date = await fetch_live_quotes(origin, destination, _check_date(date))
+        live_res = await fetch_live_quotes(origin, destination, _check_date(date))
+        quotes = live_res[0]
+        dep_date = live_res[1]
+        fetched_at = live_res[2] if len(live_res) > 2 else None
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
@@ -34,4 +37,5 @@ async def get_price_prediction(
     result["live_carrier_quotes"] = quotes
     result["departure_date"] = dep_date
     result["google_flights_url"] = build_google_flights_url(origin, destination, dep_date)
+    result["fetched_at"] = fetched_at or result.get("generated_at")
     return result
