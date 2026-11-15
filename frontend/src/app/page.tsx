@@ -9,7 +9,7 @@ import GlassCard from "@/components/GlassCard";
 import Header, { type MainTab } from "@/components/Header";
 import HistoricTrends from "@/components/HistoricTrends";
 import RouteSearch, { QUICK_ROUTES } from "@/components/RouteSearch";
-import { ApiError, buildGoogleFlightsUrl, fetchRoutePrediction, resolveRoute, type MLPrediction, type ResolvedRoute } from "@/lib/api";
+import { ApiError, fetchRoutePrediction, resolveRoute, type MLPrediction, type ResolvedRoute } from "@/lib/api";
 import { isoDate } from "@/lib/format";
 
 type Status = "idle" | "loading" | "ready" | "error";
@@ -52,7 +52,7 @@ export default function Home() {
   };
 
   const code = route ? `${route.origin} → ${route.destination}` : null;
-  const googleUrl = route ? buildGoogleFlightsUrl(route.origin, route.destination, date) : null;
+  const googleUrl = prediction?.google_flights_url ?? null;
   const liveRouteCode = route ? `${route.origin}-${route.destination}` : null;
 
   return (
@@ -118,7 +118,7 @@ export default function Home() {
                 <p className="muted text-sm">{error.message}</p>
                 <button
                   onClick={() => search()}
-                  className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 px-4 py-2 text-xs font-bold text-white"
+                  className="min-h-[44px] rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:opacity-90 active:scale-95"
                 >
                   Retry
                 </button>
@@ -129,7 +129,11 @@ export default function Home() {
               <div className="space-y-6">
                 <ForecastPanel p={prediction} />
                 <FareChart quotes={prediction.live_carrier_quotes} p={prediction} />
-                <CarrierCards quotes={prediction.live_carrier_quotes} route={code!} />
+                <CarrierCards
+                  quotes={prediction.live_carrier_quotes}
+                  route={code!}
+                  fetchedAt={prediction.fetched_at}
+                />
               </div>
             )}
           </>
@@ -153,7 +157,7 @@ export default function Home() {
             the live fare.
           </p>
           <div className="muted flex justify-between border-t border-slate-200/70 pt-2 text-[11px] dark:border-slate-800/70">
-            <span>© 2026 NAPIER Engine</span>
+            <span>© {new Date().getFullYear()} NAPIER Engine</span>
             <span className="font-mono text-cyan-500">v2.0</span>
           </div>
         </GlassCard>

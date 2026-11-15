@@ -8,8 +8,29 @@ import type { CarrierQuote } from "@/lib/api";
 
 type SortKey = "recommended" | "price-asc" | "price-desc" | "name";
 
-export default function CarrierCards({ quotes, route }: { quotes: CarrierQuote[]; route: string }) {
+export default function CarrierCards({
+  quotes,
+  route,
+  fetchedAt,
+}: {
+  quotes: CarrierQuote[];
+  route: string;
+  fetchedAt?: string;
+}) {
   const [sort, setSort] = useState<SortKey>("recommended");
+
+  const fetchedAtFormatted = useMemo(() => {
+    if (!fetchedAt) return null;
+    try {
+      const d = new Date(fetchedAt);
+      const timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+      const parts = new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(d);
+      const tz = parts.find((p) => p.type === "timeZoneName")?.value || "UTC";
+      return `Fares fetched at ${timeStr} ${tz}`;
+    } catch {
+      return null;
+    }
+  }, [fetchedAt]);
 
   const sorted = useMemo(() => {
     const list = [...quotes];
@@ -21,25 +42,37 @@ export default function CarrierCards({ quotes, route }: { quotes: CarrierQuote[]
 
   return (
     <GlassCard className="p-5">
-      <div className="mb-5 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-4 dark:border-slate-800/70">
+      <div className="mb-5 flex flex-col justify-between gap-4 border-b border-slate-200/70 pb-4 sm:flex-row sm:items-center dark:border-slate-800/70">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <span className="h-2.5 w-2.5 animate-ping rounded-full bg-cyan-500" />
             Live fares · {route}
           </h2>
-          <p className="muted text-xs">One-way results from Google Flights. Each card opens that carrier’s one-way search.</p>
+          {fetchedAtFormatted && (
+            <p className="mt-0.5 text-xs font-semibold text-cyan-600 dark:text-cyan-400">
+              {fetchedAtFormatted}
+            </p>
+          )}
+          <p className="muted mt-0.5 text-xs">
+            One-way results from Google Flights. Select a card to view flight details.
+          </p>
         </div>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          aria-label="Sort carriers"
-          className="glass-inner px-3 py-1.5 text-xs outline-none"
-        >
-          <option value="recommended">Recommended</option>
-          <option value="price-asc">Price: low to high</option>
-          <option value="price-desc">Price: high to low</option>
-          <option value="name">Airline name</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <label htmlFor="sort-carriers" className="muted shrink-0 text-xs font-semibold">
+            Sort by:
+          </label>
+          <select
+            id="sort-carriers"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className="glass-inner min-h-[44px] px-3 py-2 text-xs font-medium outline-none transition focus:ring-2 focus:ring-cyan-400/70"
+          >
+            <option value="recommended">Recommended</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="name">Airline name</option>
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

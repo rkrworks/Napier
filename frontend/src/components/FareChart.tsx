@@ -19,6 +19,14 @@ export default function FareChart({ quotes, p }: { quotes: CarrierQuote[]; p: ML
       <GlassCard className="p-5 lg:col-span-2">
         <h3 className="text-lg font-bold">Carrier fare comparison</h3>
         <p className="muted mb-4 text-xs">Live one-way fares for {p.route_code} on {p.departure_date}</p>
+        {cheapest && (
+          <p className="sr-only">
+            Cheapest carrier is {cheapest.name} at {inr(cheapest.price)}.
+            {priciest && priciest !== cheapest
+              ? ` Priciest carrier is ${priciest.name} at ${inr(priciest.price)}.`
+              : ""}
+          </p>
+        )}
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
@@ -30,7 +38,7 @@ export default function FareChart({ quotes, p }: { quotes: CarrierQuote[]; p: ML
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#334155" : "#cbd5e1"} opacity={0.5} vertical={false} />
               <XAxis dataKey="name" tick={{ fill: axis, fontSize: 11 }} tickLine={false} stroke={axis} />
-              <YAxis tick={{ fill: axis, fontSize: 11 }} tickLine={false} stroke={axis} tickFormatter={(v: number) => `₹${v / 1000}k`} />
+              <YAxis tick={{ fill: axis, fontSize: 11 }} tickLine={false} stroke={axis} tickFormatter={(v: number) => inr(v)} />
               <Tooltip
                 formatter={(v) => inr(Number(v))}
                 contentStyle={{

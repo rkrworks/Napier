@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Search } from "lucide-react";
 import GlassCard from "./GlassCard";
 import { isoDate } from "@/lib/format";
@@ -29,12 +29,22 @@ interface Props {
 
 export default function RouteSearch({ query, date, loading, statusLabel, googleUrl, onQuery, onDate, onSubmit }: Props) {
   const [open, setOpen] = useState(false);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <GlassCard glow={loading || !!statusLabel} className="relative z-20 p-4 md:p-5">
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
           setOpen(false);
           onSubmit();
         }}
@@ -48,14 +58,20 @@ export default function RouteSearch({ query, date, loading, statusLabel, googleU
               onQuery(e.target.value);
               setOpen(true);
             }}
-            onFocus={() => setOpen(true)}
-            onBlur={() => setTimeout(() => setOpen(false), 120)}
+            onFocus={() => {
+              if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+              setOpen(true);
+            }}
+            onBlur={() => {
+              if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+              blurTimeoutRef.current = setTimeout(() => setOpen(false), 150);
+            }}
             placeholder="City or IATA pair — e.g. “Delhi to Mumbai” or “DEL-BOM”"
             aria-label="Route search"
-            className="glass-inner w-full py-3 pl-10 pr-4 text-sm outline-none transition focus:ring-2 focus:ring-cyan-400/70"
+            className="glass-inner min-h-[48px] w-full py-3 pl-10 pr-4 text-sm outline-none transition focus:ring-2 focus:ring-cyan-400/70"
           />
           {open && (
-            <div className="glass absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl">
+            <div className="glass absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl shadow-xl">
               <p className="muted border-b border-slate-200/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider dark:border-slate-800/70">
                 Quick searches
               </p>
@@ -68,7 +84,7 @@ export default function RouteSearch({ query, date, loading, statusLabel, googleU
                     onQuery(r);
                     setOpen(false);
                   }}
-                  className="block w-full px-4 py-2.5 text-left text-xs transition hover:bg-cyan-500/10"
+                  className="block min-h-[44px] w-full px-4 py-3 text-left text-xs transition hover:bg-cyan-500/10"
                 >
                   {r}
                 </button>
@@ -84,13 +100,13 @@ export default function RouteSearch({ query, date, loading, statusLabel, googleU
           onChange={(e) => onDate(e.target.value)}
           aria-label="Departure date"
           suppressHydrationWarning
-          className="glass-inner px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-400/70"
+          className="glass-inner min-h-[48px] px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-400/70"
         />
 
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition hover:opacity-90 disabled:opacity-50"
+          className="min-h-[48px] rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition hover:opacity-90 active:scale-98 disabled:opacity-50"
         >
           {loading ? "Mapping…" : "Live Map Query →"}
         </button>

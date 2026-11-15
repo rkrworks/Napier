@@ -19,6 +19,8 @@ export interface CarrierQuote {
   departure_time: string | null;
   arrival_time: string | null;
   booking_url: string;
+  is_connecting?: boolean;
+  operating_carriers?: string[];
 }
 
 export interface MLPrediction {
@@ -40,6 +42,7 @@ export interface MLPrediction {
   live_carrier_quotes: CarrierQuote[];
   departure_date: string;
   google_flights_url: string;
+  fetched_at?: string;
 }
 
 export interface ResolvedRoute {
@@ -62,12 +65,6 @@ export interface ChatResponse {
   recommendation: string;
   suggested_queries: string[];
   carrier_links: CarrierQuote[];
-}
-
-/** One-way Google Flights results for a route/date, optionally scoped to a carrier. */
-export function buildGoogleFlightsUrl(origin: string, destination: string, date: string, airline?: string): string {
-  const q = `One way flights from ${origin.toUpperCase()} to ${destination.toUpperCase()} on ${date}${airline ? ` on ${airline}` : ""}`;
-  return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}&curr=INR&hl=en&tt=o`;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

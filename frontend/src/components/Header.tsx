@@ -15,21 +15,21 @@ export default function Header({ tab, onTab, onOpenAssistant }: Props) {
   const isDark = useIsDark();
 
   const tabClass = (active: boolean) =>
-    `px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all ${
+    `min-h-[44px] px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center ${
       active
         ? "bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
-        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+        : "text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
     }`;
 
   return (
-    <header className="glass sticky top-4 z-40 mx-auto w-full max-w-7xl px-4 py-4 md:px-6">
-      <div className="flex items-center justify-between gap-3">
+    <header className="glass sticky top-4 z-40 mx-auto w-full max-w-7xl px-3.5 py-3.5 sm:px-4 sm:py-4 md:px-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="hidden w-28 md:block" aria-hidden />
 
         <div className="flex flex-1 flex-col items-center text-center">
-          <div className="flex items-center justify-center gap-3">
-            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-gradient-to-br from-cyan-500 via-indigo-500 to-purple-600 shadow-lg shadow-purple-500/30">
-              <svg className="h-6 w-6 stroke-[2.5] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <div className="flex items-center justify-center gap-2.5 sm:gap-3">
+            <div className="relative flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-gradient-to-br from-cyan-500 via-indigo-500 to-purple-600 shadow-lg shadow-purple-500/30">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.5] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -37,29 +37,31 @@ export default function Header({ tab, onTab, onOpenAssistant }: Props) {
                 />
               </svg>
             </div>
-            <h1 className="bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 bg-clip-text text-4xl font-black tracking-widest text-transparent md:text-5xl">
+            <h1 className="bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 bg-clip-text text-3xl font-black tracking-widest text-transparent sm:text-4xl md:text-5xl">
               NAPIER
             </h1>
           </div>
-          <p className="muted mt-1.5 text-xs font-medium tracking-wide md:text-sm">National Airfare Price Index Engine · Real-time</p>
+          <p className="muted mt-1 text-[11px] font-medium tracking-wide sm:text-xs md:text-sm">
+            National Airfare Price Index Engine · Real-time
+          </p>
         </div>
 
-        <div className="flex w-auto items-center gap-2 md:w-28 md:justify-end">
+        <div className="flex w-full justify-center gap-2 sm:w-auto md:w-28 md:justify-end">
           <button
             onClick={() => setTheme(!isDark)}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Light mode" : "Dark mode"}
-            className="glass-inner flex h-10 w-10 items-center justify-center transition hover:scale-105"
+            className="glass-inner flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center transition hover:scale-105 focus:ring-2 focus:ring-cyan-400"
           >
             {isDark ? <Sun className="h-5 w-5 text-amber-300" /> : <Moon className="h-5 w-5 text-indigo-600" />}
           </button>
           <button
             onClick={onOpenAssistant}
             aria-label="Open AI assistant"
-            className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 px-3 text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition hover:opacity-90"
+            className="flex h-11 min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 px-3.5 text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition hover:opacity-90 focus:ring-2 focus:ring-purple-400"
           >
             <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">AI</span>
+            <span>AI Assistant</span>
           </button>
         </div>
       </div>
