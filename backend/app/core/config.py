@@ -10,9 +10,15 @@ class Settings(BaseSettings):
     SUPABASE_URL: str | None = None
     SUPABASE_KEY: str | None = None
     SERPAPI_KEY: str | None = None
+    SERPAPI_GL: str = "in"
     REDIS_URL: str | None = None
     CACHE_TTL_SECONDS: int = 2700  # 45 min; clamped to 30-60 min
-    ALLOWED_ORIGINS: str = "*"  # comma-separated list
+    ALLOWED_ORIGINS: str = (
+        "http://localhost:3000,"
+        "http://127.0.0.1:3000,"
+        "https://napier-frontend-phi.vercel.app,"
+        "https://rkrworks.github.io"
+    )
 
     @field_validator("CACHE_TTL_SECONDS")
     @classmethod
@@ -21,7 +27,20 @@ class Settings(BaseSettings):
 
     @property
     def origins(self) -> list[str]:
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+        raw = self.ALLOWED_ORIGINS.strip()
+        if raw == "*":
+            return ["*"]
+        base_defaults = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://napier-frontend-phi.vercel.app",
+            "https://rkrworks.github.io",
+        ]
+        parsed = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+        for default_origin in base_defaults:
+            if default_origin not in parsed:
+                parsed.append(default_origin)
+        return parsed
 
 
 settings = Settings()

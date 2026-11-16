@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: napier-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SERPAPI_GL
+        value: in
+      - key: ALLOWED_ORIGINS
+        value: "http://localhost:3000,http://127.0.0.1:3000,https://napier-frontend-phi.vercel.app,https://rkrworks.github.io"
+      - key: SERPAPI_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CACHE_TTL_SECONDS
+        value: "2700"

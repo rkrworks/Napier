@@ -34,15 +34,18 @@ def validate_departure_date(value: str | None) -> str:
     return value
 
 
-async def fetch_live_quotes(origin: str, destination: str, departure_date: str | None = None) -> tuple[list[dict], str]:
-    """Return (carrier quotes, departure_date). Raises LiveDataUnavailable if no real data."""
+async def fetch_live_quotes(origin: str, destination: str, departure_date: str | None = None) -> tuple[list[dict], str, str]:
+    """Return (carrier quotes, departure_date, fetched_at). Raises LiveDataUnavailable if no real data."""
     origin, destination = origin.upper(), destination.upper()
     departure_date = validate_departure_date(departure_date)
-    key = f"fares:{origin}-{destination}:{departure_date}"
+    gl = settings.SERPAPI_GL
+    key = f"fares:{gl}:{origin}-{destination}:{departure_date}"
 
     cached = await fare_cache.get(key)
     if cached:
-        return cached, departure_date
+        if isinstance(cached, dict) and "quotes" in cached:
+            return cached["quotes"], departure_date, cached.get("fetched_at", datetime.now(timezone.utc).isoformat())
+        return cached, departure_date, datetime.now(timezone.utc).isoformat()
 
     if not settings.SERPAPI_KEY:
         raise LiveDataUnavailable("SERPAPI_KEY is not configured on the backend.")
@@ -55,6 +58,7 @@ async def fetch_live_quotes(origin: str, destination: str, departure_date: str |
         "type": "2",  # SerpApi: 1 = round trip, 2 = one way
         "currency": "INR",
         "hl": "en",
+        "gl": gl,
         "api_key": settings.SERPAPI_KEY,
     }
     try:
@@ -73,5 +77,7 @@ async def fetch_live_quotes(origin: str, destination: str, departure_date: str |
     if not quotes:
         raise LiveDataUnavailable(f"No flights found for {origin} → {destination} on {departure_date}.")
 
-    await fare_cache.set(key, quotes)
-    return quotes, departure_date
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    cached_payload = {"quotes": quotes, "fetched_at": fetched_at}
+    await fare_cache.set(key, cached_payload)
+    return quotes, departure_date, fetched_at
