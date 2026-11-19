@@ -7,14 +7,14 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
-    { media: "(prefers-color-scheme: dark)", color: "#060913" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0d14" },
   ],
 };
 
 export const metadata: Metadata = {
-  title: "NAPIER v2.0 - National Airfare Price Index Engine & Live Fares",
+  title: "NAPIER v2.0 · National Airfare Price Index & Live Flight Telemetry",
   description:
-    "National Airfare Price Index Engine: live one-way fares from Google Flights via SerpApi, holiday-demand projections, and archived Jevons price index trends.",
+    "National Airfare Price Index Engine: real-time one-way airfare quotes directly aligned with Google Flights via SerpApi, festival surge projections, and archived Jevons price index metrics.",
   other: {
     "page-type": "software",
     "site-kind": "software",
@@ -43,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       data-tone="dark"
       data-ground="painting"
       data-radius="soft"
+      data-buttons="solid"
       suppressHydrationWarning
     >
       <head>

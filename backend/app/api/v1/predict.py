@@ -30,12 +30,21 @@ async def get_price_prediction(
         quotes = live_res[0]
         dep_date = live_res[1]
         fetched_at = live_res[2] if len(live_res) > 2 else None
+        canonical_url = getattr(live_res, "canonical_url", None)
+        price_insights = getattr(live_res, "price_insights", {})
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
-    result = forecaster.predict_route_fare(origin, destination, current_live_base=min(q["price"] for q in quotes))
+    min_quote_price = min(q["price"] for q in quotes)
+    if price_insights and price_insights.get("lowest_price") and price_insights["lowest_price"] > 0:
+        base_price = min(min_quote_price, price_insights["lowest_price"])
+    else:
+        base_price = min_quote_price
+
+    result = forecaster.predict_route_fare(origin, destination, current_live_base=base_price)
     result["live_carrier_quotes"] = quotes
     result["departure_date"] = dep_date
-    result["google_flights_url"] = build_google_flights_url(origin, destination, dep_date)
+    result["google_flights_url"] = canonical_url or build_google_flights_url(origin, destination, dep_date)
     result["fetched_at"] = fetched_at or result.get("generated_at")
+    result["price_insights"] = price_insights
     return result

@@ -14,11 +14,11 @@ interface RouteSearchProps {
 }
 
 const POPULAR_ROUTES = [
-  { origin: "DEL", dest: "BOM", label: "DEL → BOM" },
-  { origin: "BLR", dest: "DEL", label: "BLR → DEL" },
-  { origin: "HYD", dest: "BLR", label: "HYD → BLR" },
-  { origin: "BOM", dest: "GOI", label: "BOM → GOI" },
-  { origin: "MAA", dest: "DEL", label: "MAA → DEL" },
+  { origin: "DEL", dest: "BOM", label: "DEL → BOM (Delhi - Mumbai)" },
+  { origin: "BLR", dest: "DEL", label: "BLR → DEL (Bengaluru - Delhi)" },
+  { origin: "HYD", dest: "BLR", label: "HYD → BLR (Hyderabad - Bengaluru)" },
+  { origin: "BOM", dest: "GOI", label: "BOM → GOI (Mumbai - Goa)" },
+  { origin: "MAA", dest: "DEL", label: "MAA → DEL (Chennai - Delhi)" },
 ];
 
 export default function RouteSearch({
@@ -95,72 +95,71 @@ export default function RouteSearch({
   };
 
   return (
-    <section className="glass relative z-30 p-5 sm:p-7 shadow-xl">
+    <section className="glass relative z-30 p-5 sm:p-7 md:p-8 shadow-xl">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* Main Search Controls Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_auto] gap-3 items-center">
-          {/* Origin Airport Combobox */}
-          <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-4 items-end">
+          {/* Origin Airport Input */}
+          <div className="relative md:col-span-4">
             <label
               htmlFor={originInputId}
               className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
             >
-              Origin Airport
+              Origin (Departure Airport)
             </label>
-            <div className="relative flex items-center h-[52px] rounded-xl border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-3.5 transition focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20">
-              <MapPin className="h-4 w-4 text-cyan-500 shrink-0 mr-2.5" />
-              <div className="flex flex-col min-w-0 flex-1">
-                <input
-                  id={originInputId}
-                  type="text"
-                  value={showOriginMenu ? originQuery : `${origin} · ${getAirportCity(origin)}`}
-                  onChange={(e) => {
-                    setOriginQuery(e.target.value);
-                    if (!showOriginMenu) setShowOriginMenu(true);
-                  }}
-                  onFocus={() => {
-                    setOriginQuery(origin);
-                    setShowOriginMenu(true);
-                  }}
-                  onBlur={() => {
-                    originBlurTimeoutRef.current = setTimeout(() => {
-                      setShowOriginMenu(false);
-                    }, 250);
-                  }}
-                  placeholder="DEL, Delhi..."
-                  autoComplete="off"
-                  className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none"
-                />
+            <div className="relative flex items-center">
+              <div className="pointer-events-none absolute left-3.5 flex items-center text-slate-400">
+                <MapPin className="h-4 w-4 text-cyan-500" />
               </div>
-              <span className="font-mono text-sm font-bold text-cyan-600 dark:text-cyan-400 shrink-0 ml-1.5">
-                {origin}
+              <input
+                id={originInputId}
+                type="text"
+                value={originQuery ? originQuery : origin}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase();
+                  setOriginQuery(val);
+                  if (val.length === 3) setOrigin(val);
+                }}
+                onFocus={() => setShowOriginMenu(true)}
+                onBlur={() => {
+                  originBlurTimeoutRef.current = setTimeout(() => {
+                    setShowOriginMenu(false);
+                    setOriginQuery("");
+                  }, 200);
+                }}
+                placeholder="Airport or City (e.g. DEL)"
+                aria-label="Origin Airport code or city"
+                className="min-h-[48px] w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 pl-10 pr-16 py-2.5 font-mono text-sm font-bold text-slate-900 dark:text-white outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+              />
+              <span className="pointer-events-none absolute right-3.5 text-xs font-semibold text-slate-400 truncate max-w-[80px]">
+                {getAirportCity(origin)}
               </span>
             </div>
 
-            {/* Suggestions Dropdown */}
+            {/* Origin Suggestions Dropdown */}
             {showOriginMenu && originSuggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-64 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5">
-                {originSuggestions.map((a) => (
+              <div className="absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl z-50 p-1">
+                {originSuggestions.map((item) => (
                   <button
-                    key={`origin-${a.iata}`}
+                    key={`origin-${item.iata}`}
                     type="button"
                     onMouseDown={() => {
-                      setOrigin(a.iata);
+                      setOrigin(item.iata);
                       setOriginQuery("");
                       setShowOriginMenu(false);
                     }}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                   >
                     <div>
-                      <span className="font-bold text-slate-800 dark:text-slate-100">
-                        {a.city}
-                      </span>
-                      <span className="block text-[11px] text-slate-500 dark:text-slate-400">
-                        {a.name}
-                      </span>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {item.city} ({item.iata})
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+                        {item.name}
+                      </p>
                     </div>
-                    <span className="font-mono font-black text-cyan-600 dark:text-cyan-400 ml-2">
-                      {a.iata}
+                    <span className="font-mono text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                      {item.iata}
                     </span>
                   </button>
                 ))}
@@ -168,81 +167,80 @@ export default function RouteSearch({
             )}
           </div>
 
-          {/* Swap Button (44px min tap target) */}
-          <div className="flex justify-center -my-1 md:my-0 pt-5 md:pt-0">
+          {/* Swap Airports Button (Min 44px tap target) */}
+          <div className="flex justify-center md:col-span-1">
             <button
               type="button"
               onClick={handleSwap}
-              aria-label="Swap origin and destination"
-              title="Swap airports"
-              className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:rotate-180 active:scale-90"
+              aria-label="Swap origin and destination airports"
+              title="Swap origin and destination"
+              className="flex h-12 w-12 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-850 text-slate-700 dark:text-slate-200 shadow-sm transition hover:bg-cyan-500 hover:text-white dark:hover:bg-cyan-500 hover:scale-105 active:scale-95 cursor-pointer"
             >
               <ArrowLeftRight className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Destination Airport Combobox */}
-          <div className="relative">
+          {/* Destination Airport Input */}
+          <div className="relative md:col-span-4">
             <label
               htmlFor={destInputId}
               className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
             >
-              Destination Airport
+              Destination (Arrival Airport)
             </label>
-            <div className="relative flex items-center h-[52px] rounded-xl border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-3.5 transition focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">
-              <MapPin className="h-4 w-4 text-purple-500 shrink-0 mr-2.5" />
-              <div className="flex flex-col min-w-0 flex-1">
-                <input
-                  id={destInputId}
-                  type="text"
-                  value={showDestMenu ? destQuery : `${destination} · ${getAirportCity(destination)}`}
-                  onChange={(e) => {
-                    setDestQuery(e.target.value);
-                    if (!showDestMenu) setShowDestMenu(true);
-                  }}
-                  onFocus={() => {
-                    setDestQuery(destination);
-                    setShowDestMenu(true);
-                  }}
-                  onBlur={() => {
-                    destBlurTimeoutRef.current = setTimeout(() => {
-                      setShowDestMenu(false);
-                    }, 250);
-                  }}
-                  placeholder="BOM, Mumbai..."
-                  autoComplete="off"
-                  className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none"
-                />
+            <div className="relative flex items-center">
+              <div className="pointer-events-none absolute left-3.5 flex items-center text-slate-400">
+                <MapPin className="h-4 w-4 text-purple-500" />
               </div>
-              <span className="font-mono text-sm font-bold text-purple-600 dark:text-purple-400 shrink-0 ml-1.5">
-                {destination}
+              <input
+                id={destInputId}
+                type="text"
+                value={destQuery ? destQuery : destination}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase();
+                  setDestQuery(val);
+                  if (val.length === 3) setDestination(val);
+                }}
+                onFocus={() => setShowDestMenu(true)}
+                onBlur={() => {
+                  destBlurTimeoutRef.current = setTimeout(() => {
+                    setShowDestMenu(false);
+                    setDestQuery("");
+                  }, 200);
+                }}
+                placeholder="Airport or City (e.g. BOM)"
+                aria-label="Destination Airport code or city"
+                className="min-h-[48px] w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 pl-10 pr-16 py-2.5 font-mono text-sm font-bold text-slate-900 dark:text-white outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+              />
+              <span className="pointer-events-none absolute right-3.5 text-xs font-semibold text-slate-400 truncate max-w-[80px]">
+                {getAirportCity(destination)}
               </span>
             </div>
 
-            {/* Suggestions Dropdown */}
+            {/* Destination Suggestions Dropdown */}
             {showDestMenu && destSuggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-64 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5">
-                {destSuggestions.map((a) => (
+              <div className="absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl z-50 p-1">
+                {destSuggestions.map((item) => (
                   <button
-                    key={`dest-${a.iata}`}
+                    key={`dest-${item.iata}`}
                     type="button"
                     onMouseDown={() => {
-                      setDestination(a.iata);
+                      setDestination(item.iata);
                       setDestQuery("");
                       setShowDestMenu(false);
                     }}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                   >
                     <div>
-                      <span className="font-bold text-slate-800 dark:text-slate-100">
-                        {a.city}
-                      </span>
-                      <span className="block text-[11px] text-slate-500 dark:text-slate-400">
-                        {a.name}
-                      </span>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {item.city} ({item.iata})
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+                        {item.name}
+                      </p>
                     </div>
-                    <span className="font-mono font-black text-purple-600 dark:text-purple-400 ml-2">
-                      {a.iata}
+                    <span className="font-mono text-xs font-bold text-purple-600 dark:text-purple-400">
+                      {item.iata}
                     </span>
                   </button>
                 ))}
@@ -250,56 +248,54 @@ export default function RouteSearch({
             )}
           </div>
 
-          {/* Departure Date Selector */}
-          <div>
+          {/* Date Picker Input */}
+          <div className="relative md:col-span-2">
             <label
               htmlFor={dateInputId}
               className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
             >
               Departure Date
             </label>
-            <div className="relative flex items-center h-[52px] rounded-xl border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-3.5 transition focus-within:border-cyan-500">
-              <Calendar className="h-4 w-4 text-slate-400 shrink-0 mr-2.5" />
+            <div className="relative flex items-center">
+              <div className="pointer-events-none absolute left-3 flex items-center text-slate-400">
+                <Calendar className="h-4 w-4 text-slate-400" />
+              </div>
               <input
                 id={dateInputId}
                 type="date"
                 value={date}
                 min={isoDate(0)}
                 onChange={(e) => setDate(e.target.value)}
-                className="bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none w-full"
+                aria-label="Flight departure date"
+                className="min-h-[48px] w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 pl-9 pr-2 py-2.5 font-mono text-xs font-bold text-slate-900 dark:text-white outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               />
             </div>
           </div>
 
-          {/* Analyze Route CTA */}
-          <div className="pt-5 md:pt-0">
+          {/* Submit Search Button (Min 44px tap target) */}
+          <div className="md:col-span-1">
             <button
               type="submit"
-              disabled={loading || origin === destination}
-              className="flex h-[52px] min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 px-6 font-bold text-white shadow-lg shadow-purple-500/25 transition hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              disabled={loading}
+              aria-label="Run airfare query"
+              className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 px-4 py-2.5 font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Analyzing...</span>
-                </>
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <>
-                  <Search className="h-4 w-4" />
-                  <span>Analyze Route</span>
-                </>
+                <Search className="h-5 w-5" />
               )}
             </button>
           </div>
         </div>
 
-        {/* Popular Route Quick Selection Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Popular Indian Hubs:
+        {/* Popular Route Shortcuts Pill Bar */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">
+            Frequent Corridors:
           </span>
           {POPULAR_ROUTES.map((r) => {
-            const isSelected = origin === r.origin && destination === r.dest;
+            const isActive = origin === r.origin && destination === r.dest;
             return (
               <button
                 key={r.label}
@@ -309,13 +305,13 @@ export default function RouteSearch({
                   setDestination(r.dest);
                   onSearch(r.origin, r.dest, date);
                 }}
-                className={`min-h-[36px] rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer ${
-                  isSelected
-                    ? "bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border border-cyan-500/40"
-                    : "glass-inner text-slate-600 dark:text-slate-300 hover:text-cyan-500 dark:hover:text-cyan-400"
+                className={`flex min-h-[44px] items-center rounded-xl border px-3.5 py-1.5 text-xs font-mono font-semibold transition hover:scale-105 active:scale-95 cursor-pointer ${
+                  isActive
+                    ? "border-cyan-500 bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold"
+                    : "border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                {r.label}
+                <span>{r.label}</span>
               </button>
             );
           })}

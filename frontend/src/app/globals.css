@@ -1,57 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 @import "../styles/system.css";
 @import "../styles/cards.css";
+@import "../styles/motion.css";
+@import "../styles/layout.css";
 @import "../styles/base.css";
 
-/* NAPIER v2.0 - Taste-Skill Palette & Aviation Telemetry Specializations */
+/* ---------------------------------------------------------------- NAPIER v2.0 - Taste-Skill Palette & Aviation Design Tokens */
 :root, [data-theme="light"] {
   --p-bg: #f8fafc;
   --p-surface: #ffffff;
   --p-ink: #0f172a;
   --p-muted: #64748b;
-  --p-accent: #0891b2;
+  --p-accent: #0284c7;
   --p-accent-ink: #ffffff;
-  --p-action: #0891b2;
+  --p-action: #0284c7;
   --p-action-ink: #ffffff;
+
+  --p-inv-bg: #0a0d14;
+  --p-inv-surface: #131824;
+  --p-inv-ink: #e9edf3;
+  --p-inv-muted: #8891a1;
+  --p-inv-accent: #5ab9fc;
+  --p-inv-accent-ink: #0a0d14;
+  --p-inv-action: #5ab9fc;
+  --p-inv-action-ink: #0a0d14;
+
   --ground-bg: #e2e8f0;
   --ground-surface: #f1f5f9;
   --ground-ink: #0f172a;
   --ground-muted: #475569;
   --ground-accent: #0284c7;
+
+  --font-display: "Host Grotesk", system-ui, -apple-system, sans-serif;
+  --font-text: "Host Grotesk", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.035em;
+
   color-scheme: light;
 }
 
 html.dark, [data-theme="dark"] {
-  --p-bg: #060913;
-  --p-surface: #0f172a;
-  --p-ink: #f8fafc;
-  --p-muted: #94a3b8;
-  --p-accent: #06b6d4;
-  --p-accent-ink: #060913;
-  --p-action: #06b6d4;
-  --p-action-ink: #060913;
-  --ground-bg: #0b1120;
-  --ground-surface: #1e293b;
-  --ground-ink: #f8fafc;
-  --ground-muted: #94a3b8;
-  --ground-accent: #38bdf8;
+  --p-bg: #0a0d14;
+  --p-surface: #131824;
+  --p-ink: #e9edf3;
+  --p-muted: #8891a1;
+  --p-accent: #5ab9fc;
+  --p-accent-ink: #0a0d14;
+  --p-action: #5ab9fc;
+  --p-action-ink: #0a0d14;
+
+  --p-inv-bg: #f8fafc;
+  --p-inv-surface: #ffffff;
+  --p-inv-ink: #0f172a;
+  --p-inv-muted: #64748b;
+  --p-inv-accent: #0284c7;
+  --p-inv-accent-ink: #ffffff;
+  --p-inv-action: #0284c7;
+  --p-inv-action-ink: #ffffff;
+
+  --ground-bg: #080c14;
+  --ground-surface: #101626;
+  --ground-ink: #e9edf3;
+  --ground-muted: #8891a1;
+  --ground-accent: #5ab9fc;
+
+  --font-display: "Host Grotesk", system-ui, -apple-system, sans-serif;
+  --font-text: "Host Grotesk", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.035em;
+
   color-scheme: dark;
 }
 
-/* Spatial Glass overrides integrated with taste-skill */
+/* Glass surface styling integrated with taste-skill */
 .glass {
-  background: color-mix(in oklab, var(--card, var(--p-surface)) 80%, transparent);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid color-mix(in oklab, var(--ink, var(--p-ink)) 9%, transparent);
-  border-top-color: color-mix(in oklab, var(--ink, var(--p-ink)) 16%, transparent);
+  background: color-mix(in oklab, var(--card, var(--p-surface)) 88%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid color-mix(in oklab, var(--ink, var(--p-ink)) 10%, transparent);
+  border-top-color: color-mix(in oklab, var(--ink, var(--p-ink)) 18%, transparent);
   border-radius: var(--r-lg, 20px);
   box-shadow: inset 0 1px 0 var(--c-hi, rgba(255, 255, 255, 0.08)),
               0 2px 8px -2px rgba(0, 0, 0, 0.06),
-              0 12px 24px -8px rgba(0, 0, 0, 0.12);
-  transition: transform 180ms var(--ease, cubic-bezier(.2, .8, .2, 1)),
-              border-color 180ms var(--ease, cubic-bezier(.2, .8, .2, 1)),
-              box-shadow 180ms var(--ease, cubic-bezier(.2, .8, .2, 1));
+              0 14px 28px -10px rgba(0, 0, 0, 0.16);
+  transition: transform 180ms cubic-bezier(.2, .8, .2, 1),
+              border-color 180ms cubic-bezier(.2, .8, .2, 1),
+              box-shadow 180ms cubic-bezier(.2, .8, .2, 1);
 }
 
 .glass-inner {
@@ -62,4 +99,25 @@ html.dark, [data-theme="dark"] {
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Strict mobile touch target enforcement (minimum 44px tap size) */
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Section styling following taste-skill screen spec */
+.taste-section {
+  position: relative;
+  width: 100%;
+  padding-top: var(--padt, 80px);
+  padding-bottom: var(--padb, 64px);
+}
+
+@media (max-width: 767px) {
+  .taste-section {
+    padding-top: 48px;
+    padding-bottom: 40px;
+  }
 }

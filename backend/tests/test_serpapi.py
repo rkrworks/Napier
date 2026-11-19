@@ -1,4 +1,13 @@
-import pytest
+try:
+    import pytest
+except ImportError:
+    class DummyMark:
+        @staticmethod
+        def anyio(fn):
+            return fn
+    class DummyPytest:
+        mark = DummyMark()
+    pytest = DummyPytest()
 import httpx
 from unittest.mock import AsyncMock, patch
 

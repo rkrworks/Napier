@@ -48,6 +48,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env
 .env.*
+
+# taste-skill build and cache artifacts
+.taste-skill/
 !.env.example
 *.env
 *.env.*

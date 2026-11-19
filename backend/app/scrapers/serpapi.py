@@ -5,7 +5,7 @@ import httpx
 
 from app.core.cache import fare_cache
 from app.core.config import settings
-from app.scrapers.parse import parse_serpapi_flights
+from app.scrapers.parse import build_google_flights_url, extract_price_insights, parse_serpapi_flights
 
 SERPAPI_URL = "https://serpapi.com/search.json"
 
@@ -16,6 +16,23 @@ class LiveDataUnavailable(Exception):
     def __init__(self, reason: str):
         super().__init__(reason)
         self.reason = reason
+
+
+class LiveQuotesResult(tuple):
+    """Tuple subclass preserving (quotes, departure_date, fetched_at) with canonical_url & price_insights."""
+
+    def __new__(
+        cls,
+        quotes: list[dict],
+        departure_date: str,
+        fetched_at: str,
+        canonical_url: str | None = None,
+        price_insights: dict | None = None,
+    ):
+        instance = super().__new__(cls, (quotes, departure_date, fetched_at))
+        instance.canonical_url = canonical_url
+        instance.price_insights = price_insights or {}
+        return instance
 
 
 def default_departure_date() -> str:
@@ -34,8 +51,15 @@ def validate_departure_date(value: str | None) -> str:
     return value
 
 
-async def fetch_live_quotes(origin: str, destination: str, departure_date: str | None = None) -> tuple[list[dict], str, str]:
-    """Return (carrier quotes, departure_date, fetched_at). Raises LiveDataUnavailable if no real data."""
+async def fetch_live_quotes(
+    origin: str,
+    destination: str,
+    departure_date: str | None = None,
+) -> LiveQuotesResult:
+    """Return (carrier quotes, departure_date, fetched_at) with exact Google Flights alignment.
+
+    Raises LiveDataUnavailable if no real data.
+    """
     origin, destination = origin.upper(), destination.upper()
     departure_date = validate_departure_date(departure_date)
     gl = settings.SERPAPI_GL
@@ -44,8 +68,14 @@ async def fetch_live_quotes(origin: str, destination: str, departure_date: str |
     cached = await fare_cache.get(key)
     if cached:
         if isinstance(cached, dict) and "quotes" in cached:
-            return cached["quotes"], departure_date, cached.get("fetched_at", datetime.now(timezone.utc).isoformat())
-        return cached, departure_date, datetime.now(timezone.utc).isoformat()
+            return LiveQuotesResult(
+                cached["quotes"],
+                departure_date,
+                cached.get("fetched_at", datetime.now(timezone.utc).isoformat()),
+                cached.get("canonical_url"),
+                cached.get("price_insights"),
+            )
+        return LiveQuotesResult(cached, departure_date, datetime.now(timezone.utc).isoformat())
 
     if not settings.SERPAPI_KEY:
         raise LiveDataUnavailable("SERPAPI_KEY is not configured on the backend.")
@@ -73,11 +103,22 @@ async def fetch_live_quotes(origin: str, destination: str, departure_date: str |
     if payload.get("error"):
         raise LiveDataUnavailable(f"SerpApi: {payload['error']}")
 
-    quotes = parse_serpapi_flights(payload, origin, destination, departure_date)
+    canonical_url = (
+        payload.get("search_metadata", {}).get("google_flights_url")
+        or build_google_flights_url(origin, destination, departure_date, gl=gl)
+    )
+    price_insights = extract_price_insights(payload)
+
+    quotes = parse_serpapi_flights(payload, origin, destination, departure_date, gl=gl)
     if not quotes:
         raise LiveDataUnavailable(f"No flights found for {origin} → {destination} on {departure_date}.")
 
     fetched_at = datetime.now(timezone.utc).isoformat()
-    cached_payload = {"quotes": quotes, "fetched_at": fetched_at}
+    cached_payload = {
+        "quotes": quotes,
+        "fetched_at": fetched_at,
+        "canonical_url": canonical_url,
+        "price_insights": price_insights,
+    }
     await fare_cache.set(key, cached_payload)
-    return quotes, departure_date, fetched_at
+    return LiveQuotesResult(quotes, departure_date, fetched_at, canonical_url, price_insights)
